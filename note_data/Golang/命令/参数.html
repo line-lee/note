@@ -31,34 +31,51 @@
 
 <script>
   (function(){
+    // 笔记数据 - 键名使用简化的标志名
     const notesData = {
-      "flag_-v": [{"content": "verbose模式，显示详细输出，在go test中会显示每个测试用例的执行情况", "time": "2026-03-27 16:00:00"}],
-      "flag_-race": [{"content": "启用数据竞争检测，会略微增加内存和CPU开销，建议在测试阶段使用", "time": "2026-03-27 16:05:00"}],
-      "flag_-ldflags": [{"content": "链接器参数，常用 -X 注入版本信息: -ldflags='-X main.version=1.0.0 -X main.buildTime=$(date)'", "time": "2026-03-27 16:10:00"}]
+      "-v": [
+        {"content": "verbose模式，显示详细输出，在go test中会显示每个测试用例的执行情况", "time": "2026-03-27 16:00:00"},
+        {"content": "也可以用于 go build -v 查看编译的包", "time": "2026-03-27 16:02:00"}
+      ],
+      "-race": [
+        {"content": "启用数据竞争检测，会略微增加内存和CPU开销，建议在测试阶段使用", "time": "2026-03-27 16:05:00"}
+      ],
+      "-ldflags": [
+        {"content": "链接器参数，常用 -X 注入版本信息: -ldflags='-X main.version=1.0.0 -X main.buildTime=$(date)'", "time": "2026-03-27 16:10:00"}
+      ],
+      "-cover": [
+        {"content": "显示代码覆盖率，通常配合 -coverprofile 使用", "time": "2026-03-27 16:15:00"}
+      ],
+      "-mod": [
+        {"content": "模块模式: readonly 只读模式，vendor 使用vendor目录，mod 自动下载依赖", "time": "2026-03-27 16:20:00"}
+      ]
     };
 
-    function getNoteList(key) { return notesData[key] || []; }
+    function getNoteList(key) {
+      return notesData[key] || [];
+    }
+
     let expandStates = {};
 
     function renderFullWidthNotesPanel(key) {
       const notes = getNoteList(key);
       const container = document.createElement('div');
-      if(notes.length===0){
-        const empty=document.createElement('div');
-        empty.className='empty-notes-msg';
-        empty.textContent='📭 暂无笔记';
+      if(notes.length === 0){
+        const empty = document.createElement('div');
+        empty.className = 'empty-notes-msg';
+        empty.textContent = '📭 暂无笔记';
         container.appendChild(empty);
       } else {
-        notes.forEach((note)=>{
-          const div=document.createElement('div');
-          div.className='note-item';
-          const line=document.createElement('div');
-          line.className='note-line';
-          const timeSpan=document.createElement('span');
-          timeSpan.className='note-time-badge';
-          timeSpan.innerHTML=`📅 ${note.time}`;
-          const contentSpan=document.createElement('span');
-          contentSpan.className='note-content-text';
+        notes.forEach((note) => {
+          const div = document.createElement('div');
+          div.className = 'note-item';
+          const line = document.createElement('div');
+          line.className = 'note-line';
+          const timeSpan = document.createElement('span');
+          timeSpan.className = 'note-time-badge';
+          timeSpan.innerHTML = `📅 ${note.time}`;
+          const contentSpan = document.createElement('span');
+          contentSpan.className = 'note-content-text';
           contentSpan.innerHTML = note.content;
           line.appendChild(timeSpan);
           line.appendChild(contentSpan);
@@ -70,69 +87,95 @@
     }
 
     function createFieldWithToggle(flagName, key, noteCount, isExpanded, onToggle){
-      const wrap=document.createElement('div');
-      wrap.className='field-container';
-      const nameSpan=document.createElement('span');
-      nameSpan.className='flag-name';
-      nameSpan.textContent=flagName;
-      const toggleBtn=document.createElement('button');
-      toggleBtn.className='notes-toggle';
-      toggleBtn.innerHTML=isExpanded?'✔':'>';
-      const countSpan=document.createElement('span');
-      countSpan.className='notes-count';
-      countSpan.textContent=`${noteCount}`;
+      const wrap = document.createElement('div');
+      wrap.className = 'field-container';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'flag-name';
+      nameSpan.textContent = flagName;
+      const toggleBtn = document.createElement('button');
+      toggleBtn.className = 'notes-toggle';
+      toggleBtn.innerHTML = isExpanded ? '▼' : '▶';  // 改用更直观的箭头
+      const countSpan = document.createElement('span');
+      countSpan.className = 'notes-count';
+      countSpan.textContent = `${noteCount}`;
       wrap.appendChild(nameSpan);
       wrap.appendChild(toggleBtn);
-      if(noteCount>0) wrap.appendChild(countSpan);
-      toggleBtn.onclick=onToggle;
+      if(noteCount > 0) wrap.appendChild(countSpan);
+      toggleBtn.onclick = onToggle;
       return wrap;
     }
 
     function renderTable() {
+      // 表格数据 - 使用简化的标志名作为键
       const data = [
-        {flag:"-v",commands:"build,test",desc:"详细日志"},{flag:"-x",commands:"build,test",desc:"打印执行的命令"},
-        {flag:"-o <file>",commands:"build",desc:"指定输出文件名"},{flag:"-race",commands:"build,test",desc:"启用数据竞争检测"},
-        {flag:"-cover",commands:"test",desc:"显示代码覆盖率"},{flag:"-coverprofile",commands:"test",desc:"输出覆盖率文件"},
-        {flag:"-mod <mode>",commands:"build,test",desc:"模块模式 (readonly/vendor/mod)"},{flag:"-ldflags",commands:"build",desc:"链接器参数"},
-        {flag:"-tags",commands:"build,test",desc:"构建标签"},{flag:"-run <regexp>",commands:"test",desc:"运行匹配的测试"},
-        {flag:"-bench",commands:"test",desc:"运行基准测试"},{flag:"-count <n>",commands:"test",desc:"运行测试次数"},
-        {flag:"-json",commands:"test",desc:"JSON格式输出"},{flag:"-work",commands:"build,test",desc:"保留临时工作目录"},
-        {flag:"-trimpath",commands:"build",desc:"移除文件系统路径"},{flag:"-gcflags",commands:"build",desc:"编译器参数"}
+        {flag:"-v", commands:"build,test", desc:"详细日志"},
+        {flag:"-x", commands:"build,test", desc:"打印执行的命令"},
+        {flag:"-o", commands:"build", desc:"指定输出文件名", placeholder:"<file>"},
+        {flag:"-race", commands:"build,test", desc:"启用数据竞争检测"},
+        {flag:"-cover", commands:"test", desc:"显示代码覆盖率"},
+        {flag:"-coverprofile", commands:"test", desc:"输出覆盖率文件"},
+        {flag:"-mod", commands:"build,test", desc:"模块模式 (readonly/vendor/mod)", placeholder:"<mode>"},
+        {flag:"-ldflags", commands:"build", desc:"链接器参数"},
+        {flag:"-tags", commands:"build,test", desc:"构建标签"},
+        {flag:"-run", commands:"test", desc:"运行匹配的测试", placeholder:"<regexp>"},
+        {flag:"-bench", commands:"test", desc:"运行基准测试"},
+        {flag:"-count", commands:"test", desc:"运行测试次数", placeholder:"<n>"},
+        {flag:"-json", commands:"test", desc:"JSON格式输出"},
+        {flag:"-work", commands:"build,test", desc:"保留临时工作目录"},
+        {flag:"-trimpath", commands:"build", desc:"移除文件系统路径"},
+        {flag:"-gcflags", commands:"build", desc:"编译器参数"}
       ];
-      const c = document.getElementById('flags-table');
-      if(!c) return;
+
+      const container = document.getElementById('flags-table');
+      if(!container) return;
+
       const table = document.createElement('table');
       const thead = document.createElement('thead');
       const header = document.createElement('tr');
-      ['参数/标志', '适用命令', '说明'].forEach(col=>{ const th=document.createElement('th'); th.textContent=col; header.appendChild(th); });
+      ['参数/标志', '适用命令', '说明'].forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col;
+        header.appendChild(th);
+      });
       thead.appendChild(header);
       table.appendChild(thead);
+
       const tbody = document.createElement('tbody');
+
       data.forEach(item => {
-        const key = `flag_${item.flag}`;
+        const key = item.flag;  // 直接使用标志名作为键
         const noteCount = getNoteList(key).length;
         const isExpanded = expandStates[key] || false;
         const mainRow = document.createElement('tr');
 
+        // 第一列：参数名 + 按钮
         const td1 = document.createElement('td');
-        const btnWrap = createFieldWithToggle(item.flag, key, noteCount, isExpanded, () => {
+        // 显示带占位符的参数名
+        let displayFlag = item.flag;
+        if (item.placeholder) {
+          displayFlag = `${item.flag} ${item.placeholder}`;
+        }
+        const btnWrap = createFieldWithToggle(displayFlag, key, noteCount, isExpanded, () => {
           expandStates[key] = !expandStates[key];
-          renderTable();
+          renderTable();  // 重新渲染
         });
         td1.appendChild(btnWrap);
         mainRow.appendChild(td1);
 
+        // 第二列：适用命令
         const td2 = document.createElement('td');
         td2.innerHTML = `<code>go ${item.commands}</code>`;
         mainRow.appendChild(td2);
 
+        // 第三列：说明
         const td3 = document.createElement('td');
         td3.innerHTML = `<span style="font-weight:500;">${item.desc}</span>`;
         mainRow.appendChild(td3);
 
         tbody.appendChild(mainRow);
 
-        if(isExpanded){
+        // 如果有笔记且展开，添加展开行
+        if(isExpanded && noteCount > 0){
           const expandRow = document.createElement('tr');
           expandRow.className = 'notes-expand-row';
           const expandCell = document.createElement('td');
@@ -143,10 +186,13 @@
           tbody.appendChild(expandRow);
         }
       });
+
       table.appendChild(tbody);
-      c.innerHTML = '';
-      c.appendChild(table);
+      container.innerHTML = '';
+      container.appendChild(table);
     }
+
+    // 初始化渲染
     renderTable();
   })();
 </script>
