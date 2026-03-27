@@ -1,0 +1,22 @@
+第一步：向AI发送整个index.html代码
+
+第二部：向他发送note_data的结构
+例如：这是我github上的note_data目录（这个在本地cmd可以在文件夹下用 tree /F 命令获取）
+├─Golang
+│  │  工具链.html
+│  │
+│  ├─命令
+│  │      参数.html
+│  │      命令.html
+│  │
+│  └─环境变量
+│          架构特定环境变量.html
+│          特殊用途 & 实验变量.html
+│          通用环境变量.html
+│
+└─操作系统
+        shell的生命周期.html
+第三步：哪个文件有问题，再将哪个文件的子html给AI
+
+
+

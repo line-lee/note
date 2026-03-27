@@ -1,6 +1,13 @@
-<div class="special-section">
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go特殊用途及实验变量</title>
     <style>
-        .special-section{font-family:'Segoe UI',Roboto,system-ui;background:#f8fafc;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Segoe UI',Roboto,system-ui;background:#f8fafc;padding:32px;}
+        .special-section{max-width:1400px;margin:0 auto;}
         .special-card{background:#fff;border-radius:28px;overflow-x:auto;border:1px solid #eef2f8;}
         .special-title{font-size:1.45rem;font-weight:600;padding:20px 24px 12px;border-bottom:2px solid #eef2f8;display:flex;align-items:center;gap:12px;}
         .special-title span{background:#e9f0f5;font-size:.75rem;padding:4px 12px;border-radius:40px;color:#006688;}
@@ -8,142 +15,55 @@
         th{text-align:left;padding:14px 20px;background:#fafcff;font-weight:600;color:#1f4b5e;border-bottom:1px solid #e6edf4;}
         td{padding:12px 20px;border-bottom:1px solid #eff3f9;vertical-align:top;}
         .var-name{font-family:'Fira Code',monospace;font-weight:600;background:#fef6f9;border-radius:8px;padding:2px 8px;font-size:.82rem;display:inline-block;color:#c7254e;}
-        .notes-toggle{background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 8px;border-radius:20px;color:#a47c48;font-weight:bold;}
-        .notes-toggle:hover{background:#f0e6d8;}
-        .notes-count{font-size:.65rem;background:#f5e6d3;border-radius:30px;padding:2px 6px;color:#b87c3a;margin-left:6px;}
-        .notes-expand-row{background:#fefaf5;}
-        .notes-expand-cell{padding:12px 20px!important;background:#fefaf5;}
-        .note-item{background:#fffaf0;border-radius:12px;padding:10px 12px;margin:8px 0;border:1px solid #f0e2cf;}
-        .note-line{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
-        .note-time-badge{font-size:.7rem;color:#b2894b;background:#f7efe3;padding:2px 8px;border-radius:20px;white-space:nowrap;}
-        .note-content-text{flex:1;color:#5e3a1f;word-break:break-word;white-space:pre-wrap;font-family:'Fira Code',monospace;font-size:0.85rem;line-height:1.6;}
-        .empty-notes-msg{font-size:.7rem;color:#b0a088;font-style:italic;padding:8px 0;}
-        .field-container{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-        .badge-group{font-size:.7rem;background:#eef2fa;color:#2c5a74;border-radius:30px;padding:2px 8px;margin-left:8px;}
-        .footnote{font-size:.75rem;color:#6a7f94;margin-top:20px;text-align:center;padding-top:18px;}
+        .badge{background:#eef2fa;color:#2c5a74;border-radius:30px;padding:2px 8px;font-size:.7rem;margin-left:8px;display:inline-block;}
     </style>
+</head>
+<body>
+<div class="special-section">
     <div class="special-card">
         <div class="special-title">⚙️ 特殊用途 & 实验变量 <span>高级配置</span></div>
         <div id="special-env-table"></div>
     </div>
-    <div class="footnote">📖 点击字段旁的「>」展开查看笔记</div>
 </div>
 
 <script>
-    (function(){
-        const notesData = {
-            "env_special_GOEXPERIMENT": [{"content": "启用实验性功能：GOEXPERIMENT=fieldtrack,regabiwrappers等，多个特性用逗号分隔", "time": "2026-03-27 15:00:00"}],
-            "env_special_GOTOOLDIR": [{"content": "只读变量，指向Go工具链目录，通常为 $GOROOT/pkg/tool/${GOOS}_${GOARCH}", "time": "2026-03-27 15:05:00"}]
-        };
+    const specialData = [
+        {name:"GOEXPERIMENT", desc:"工具链实验特性", readonly:false},
+        {name:"GO_EXTLINK_ENABLED", desc:"外部链接模式", readonly:false},
+        {name:"GIT_ALLOW_PROTOCOL", desc:"Git允许协议", readonly:false},
+        {name:"GCCGOTOOLDIR", desc:"gccgo工具目录", readonly:false},
+        {name:"GOTOOLDIR", desc:"工具链路径", readonly:true},
+        {name:"GOVERSION", desc:"Go版本", readonly:true},
+        {name:"GOMOD", desc:"go.mod路径，无模块时为NUL", readonly:true},
+        {name:"GOEXE", desc:"可执行文件后缀", readonly:true},
+        {name:"GOGCCFLAGS", desc:"CGO默认编译器参数", readonly:true},
+        {name:"GOHOSTARCH", desc:"工具链架构", readonly:true},
+        {name:"GOHOSTOS", desc:"工具链系统", readonly:true},
+        {name:"GOTELEMETRYDIR", desc:"遥测数据存储目录", readonly:true},
+        {name:"CGO_CFLAGS", desc:"CGO C编译额外flags", readonly:false},
+        {name:"CGO_CPPFLAGS", desc:"CGO 预处理额外flags", readonly:false},
+        {name:"CGO_CXXFLAGS", desc:"CGO C++编译额外flags", readonly:false},
+        {name:"CGO_FFLAGS", desc:"CGO Fortran编译额外flags", readonly:false},
+        {name:"CGO_LDFLAGS", desc:"CGO 链接额外flags", readonly:false}
+    ];
 
-        function getNoteList(key) { return notesData[key] || []; }
-        let expandStates = {};
+    function renderSpecial() {
+        const container = document.getElementById('special-env-table');
+        if(!container) return;
 
-        function renderFullWidthNotesPanel(key) {
-            const notes = getNoteList(key);
-            const container = document.createElement('div');
-            if(notes.length===0){
-                const empty=document.createElement('div');
-                empty.className='empty-notes-msg';
-                empty.textContent='📭 暂无笔记';
-                container.appendChild(empty);
-            } else {
-                notes.forEach((note)=>{
-                    const div=document.createElement('div');
-                    div.className='note-item';
-                    const line=document.createElement('div');
-                    line.className='note-line';
-                    const timeSpan=document.createElement('span');
-                    timeSpan.className='note-time-badge';
-                    timeSpan.innerHTML=`📅 ${note.time}`;
-                    const contentSpan=document.createElement('span');
-                    contentSpan.className='note-content-text';
-                    contentSpan.innerHTML = note.content;
-                    line.appendChild(timeSpan);
-                    line.appendChild(contentSpan);
-                    div.appendChild(line);
-                    container.appendChild(div);
-                });
-            }
-            return container;
+        let html = '<table><thead><tr><th>变量名</th><th>说明</th></tr></thead><tbody>';
+        for (const item of specialData) {
+            const readonlyBadge = item.readonly ? '<span class="badge">只读</span>' : '';
+            html += `<tr>
+                <td><span class="var-name">${item.name}</span></td>
+                <td>${item.desc} ${readonlyBadge}</td>
+            </tr>`;
         }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
 
-        function createFieldWithToggle(fieldName, key, noteCount, isExpanded, onToggle){
-            const wrap=document.createElement('div');
-            wrap.className='field-container';
-            const nameSpan=document.createElement('span');
-            nameSpan.className='var-name';
-            nameSpan.textContent=fieldName;
-            const toggleBtn=document.createElement('button');
-            toggleBtn.className='notes-toggle';
-            toggleBtn.innerHTML=isExpanded?'✔':'>';
-            const countSpan=document.createElement('span');
-            countSpan.className='notes-count';
-            countSpan.textContent=`${noteCount}`;
-            wrap.appendChild(nameSpan);
-            wrap.appendChild(toggleBtn);
-            if(noteCount>0) wrap.appendChild(countSpan);
-            toggleBtn.onclick=onToggle;
-            return wrap;
-        }
-
-        function renderTable() {
-            const data = [
-                {name:"GOEXPERIMENT",desc:"工具链实验特性",readonly:false},{name:"GO_EXTLINK_ENABLED",desc:"外部链接模式",readonly:false},
-                {name:"GIT_ALLOW_PROTOCOL",desc:"Git允许协议",readonly:false},{name:"GCCGOTOOLDIR",desc:"gccgo工具目录",readonly:false},
-                {name:"GOTOOLDIR",desc:"工具链路径",readonly:true},{name:"GOVERSION",desc:"Go版本",readonly:true},
-                {name:"GOMOD",desc:"go.mod路径，无模块时为NUL",readonly:true},{name:"GOEXE",desc:"可执行文件后缀",readonly:true},
-                {name:"GOGCCFLAGS",desc:"CGO默认编译器参数",readonly:true},{name:"GOHOSTARCH",desc:"工具链架构",readonly:true},
-                {name:"GOHOSTOS",desc:"工具链系统",readonly:true},{name:"GOTELEMETRYDIR",desc:"遥测数据存储目录",readonly:true},
-                {name:"CGO_CFLAGS",desc:"CGO C编译额外flags",readonly:false},{name:"CGO_CPPFLAGS",desc:"CGO 预处理额外flags",readonly:false},
-                {name:"CGO_CXXFLAGS",desc:"CGO C++编译额外flags",readonly:false},{name:"CGO_FFLAGS",desc:"CGO Fortran编译额外flags",readonly:false},
-                {name:"CGO_LDFLAGS",desc:"CGO 链接额外flags",readonly:false}
-            ];
-            const c = document.getElementById('special-env-table');
-            if(!c) return;
-            const table = document.createElement('table');
-            const thead = document.createElement('thead');
-            const header = document.createElement('tr');
-            ['变量名', '说明'].forEach(col=>{ const th=document.createElement('th'); th.textContent=col; header.appendChild(th); });
-            thead.appendChild(header);
-            table.appendChild(thead);
-            const tbody = document.createElement('tbody');
-            data.forEach(item => {
-                const key = `env_special_${item.name}`;
-                const noteCount = getNoteList(key).length;
-                const isExpanded = expandStates[key] || false;
-                const mainRow = document.createElement('tr');
-
-                const td1 = document.createElement('td');
-                const btnWrap = createFieldWithToggle(item.name, key, noteCount, isExpanded, () => {
-                    expandStates[key] = !expandStates[key];
-                    renderTable();
-                });
-                td1.appendChild(btnWrap);
-                mainRow.appendChild(td1);
-
-                const td2 = document.createElement('td');
-                let displayVal = item.desc;
-                if(item.readonly) displayVal += ' <span class="badge-group">只读</span>';
-                td2.innerHTML = `<span style="font-weight:500;">${displayVal}</span>`;
-                mainRow.appendChild(td2);
-                tbody.appendChild(mainRow);
-
-                if(isExpanded){
-                    const expandRow = document.createElement('tr');
-                    expandRow.className = 'notes-expand-row';
-                    const expandCell = document.createElement('td');
-                    expandCell.colSpan = 2;
-                    expandCell.className = 'notes-expand-cell';
-                    expandCell.appendChild(renderFullWidthNotesPanel(key));
-                    expandRow.appendChild(expandCell);
-                    tbody.appendChild(expandRow);
-                }
-            });
-            table.appendChild(tbody);
-            c.innerHTML = '';
-            c.appendChild(table);
-        }
-        renderTable();
-    })();
+    renderSpecial();
 </script>
+</body>
+</html>

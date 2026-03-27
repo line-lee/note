@@ -3,67 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shell 生命周期 · 进程模型与命令执行</title>
+    <title>Shell生命周期 · 进程模型与命令执行</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Segoe UI',Roboto,system-ui;background:#f8fafc;color:#1a2c3e;padding:32px;}
         .container{max-width:1400px;margin:0 auto;}
-
-        /* 卡片样式 - 与之前风格一致 */
         .card{background:#fff;border-radius:28px;margin-bottom:32px;overflow:hidden;border:1px solid #eef2f8;}
         .card-title{font-size:1.45rem;font-weight:600;padding:20px 24px 12px;border-bottom:2px solid #eef2f8;display:flex;align-items:center;gap:12px;}
         .card-title span{background:#e9f0f5;font-size:.75rem;padding:4px 12px;border-radius:40px;color:#006688;}
         .card-content{padding:24px;}
-
-        /* 表格样式 */
         table{width:100%;border-collapse:collapse;font-size:.88rem;}
         th{text-align:left;padding:14px 20px;background:#fafcff;font-weight:600;color:#1f4b5e;border-bottom:1px solid #e6edf4;}
         td{padding:12px 20px;border-bottom:1px solid #eff3f9;vertical-align:top;}
         .term-name{font-family:'Fira Code',monospace;font-weight:600;background:#fef6f9;border-radius:8px;padding:2px 8px;font-size:.82rem;display:inline-block;color:#c7254e;}
-        .term-desc{color:#2c5a74;line-height:1.5;}
-
-        /* 笔记/展开功能 */
-        .notes-toggle{background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 8px;border-radius:20px;color:#a47c48;font-weight:bold;}
-        .notes-toggle:hover{background:#f0e6d8;}
-        .notes-count{font-size:.65rem;background:#f5e6d3;border-radius:30px;padding:2px 6px;color:#b87c3a;margin-left:6px;}
-        .notes-expand-row{background:#fefaf5;}
-        .notes-expand-cell{padding:12px 20px!important;background:#fefaf5;}
-        .note-item{background:#fffaf0;border-radius:12px;padding:10px 12px;margin:8px 0;border:1px solid #f0e2cf;}
-        .note-line{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
-        .note-time-badge{font-size:.7rem;color:#b2894b;background:#f7efe3;padding:2px 8px;border-radius:20px;white-space:nowrap;}
-        .note-content-text{flex:1;color:#5e3a1f;word-break:break-word;white-space:pre-wrap;font-family:'Fira Code',monospace;font-size:0.85rem;line-height:1.6;}
-        .empty-notes-msg{font-size:.7rem;color:#b0a088;font-style:italic;padding:8px 0;}
-        .field-container{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-
-        /* 流程图样式 */
+        code{background:#f1f5f9;padding:2px 6px;border-radius:8px;font-family:monospace;font-size:.8rem;}
         .flowchart{background:#fafcff;border-radius:20px;padding:24px;margin-bottom:20px;overflow-x:auto;}
         .flow-row{display:flex;justify-content:space-around;align-items:center;flex-wrap:wrap;gap:20px;margin:20px 0;}
-        .flow-node{background:#fff;border:2px solid #e2e8f0;border-radius:16px;padding:16px 24px;text-align:center;min-width:140px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+        .flow-node{background:#fff;border:2px solid #e2e8f0;border-radius:16px;padding:16px 24px;text-align:center;min-width:140px;}
         .flow-node-title{font-weight:700;font-size:1rem;color:#007d9c;margin-bottom:8px;font-family:'Fira Code',monospace;}
         .flow-node-desc{font-size:.75rem;color:#5f7f9a;}
-        .flow-arrow{font-size:1.5rem;color:#8ba0ae;font-weight:300;}
+        .flow-arrow{font-size:1.5rem;color:#8ba0ae;}
         .flow-group{background:#f1f5f9;border-radius:20px;padding:20px;margin:16px 0;border-left:4px solid #007d9c;}
         .flow-group-title{font-weight:600;color:#005c7a;margin-bottom:16px;font-size:1rem;}
-
-        /* 进程树图 */
         .process-tree{background:#fefce8;border-radius:20px;padding:20px;font-family:'Fira Code',monospace;font-size:.85rem;margin:20px 0;}
         .tree-line{font-family:monospace;white-space:pre;line-height:1.8;}
         .shell-badge{color:#c7254e;font-weight:bold;}
         .child-badge{color:#1f6e43;}
-
-        /* 代码块 */
-        code{background:#f1f5f9;padding:2px 6px;border-radius:8px;font-family:'Fira Code',monospace;font-size:.8rem;}
         pre{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:16px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:.8rem;margin:16px 0;}
-
-        .footnote{font-size:.75rem;color:#6a7f94;margin-top:20px;text-align:center;border-top:1px solid #e2eaf0;padding-top:18px;}
-        .badge{background:#eef2fa;color:#2c5a74;border-radius:30px;padding:2px 8px;font-size:.7rem;margin-left:8px;}
-
         @media (max-width: 768px){.flow-row{flex-direction:column;}.flow-arrow{transform:rotate(90deg);}}
     </style>
 </head>
 <body>
 <div class="container">
-    <!-- 核心概念卡片 -->
     <div class="card">
         <div class="card-title">🐚 Shell 生命周期核心概念 <span>fork · execve · 信号</span></div>
         <div class="card-content">
@@ -71,67 +42,48 @@
         </div>
     </div>
 
-    <!-- 串行 vs 并行命令执行流程图 -->
     <div class="card">
         <div class="card-title">🔄 命令执行模式：串行 vs 并行 <span>父进程 PID 存活保证</span></div>
         <div class="card-content">
             <div class="flowchart">
-                <!-- 串行执行流程 -->
                 <div class="flow-group">
                     <div class="flow-group-title">📌 串行执行 (; 或 && 或 ||)</div>
                     <div class="flow-row">
                         <div class="flow-node"><div class="flow-node-title">Shell (PID=1000)</div><div class="flow-node-desc">父进程持续存活</div></div>
                         <div class="flow-arrow">→</div>
-                        <div class="flow-node"><div class="flow-node-title">fork()</div><div class="flow-node-desc">创建子进程 PID=1001</div></div>
+                        <div class="flow-node"><div class="flow-node-title">fork()</div><div class="flow-node-desc">创建子进程</div></div>
                         <div class="flow-arrow">→</div>
-                        <div class="flow-node"><div class="flow-node-title">execve()</div><div class="flow-node-desc">替换为命令1</div></div>
+                        <div class="flow-node"><div class="flow-node-title">execve()</div><div class="flow-node-desc">替换为命令</div></div>
                         <div class="flow-arrow">→</div>
-                        <div class="flow-node"><div class="flow-node-title">wait()</div><div class="flow-node-desc">Shell 等待子进程退出</div></div>
+                        <div class="flow-node"><div class="flow-node-title">wait()</div><div class="flow-node-desc">等待子进程退出</div></div>
                     </div>
-                    <div class="flow-row">
-                        <div class="flow-node"><div class="flow-node-title">Shell (PID=1000)</div><div class="flow-node-desc">继续执行</div></div>
-                        <div class="flow-arrow">→</div>
-                        <div class="flow-node"><div class="flow-node-title">fork() → execve()</div><div class="flow-node-desc">执行命令2</div></div>
-                        <div class="flow-arrow">→</div>
-                        <div class="flow-node"><div class="flow-node-title">wait()</div><div class="flow-node-desc">再次等待</div></div>
-                    </div>
-                    <div style="margin-top:16px; padding:12px; background:#eef3fa; border-radius:12px; font-size:.85rem;">
-                        💡 <strong>父进程存活保证</strong>：Shell 通过 <code>wait()</code> 系统调用阻塞等待子进程结束，<strong>父进程 PID 始终保持不变 (1000)</strong>，子进程结束后由 init (PID=1) 接管僵尸进程回收。
+                    <div style="margin-top:16px; padding:12px; background:#eef3fa; border-radius:12px;">
+                        💡 <strong>父进程存活保证</strong>：Shell 通过 <code>wait()</code> 阻塞等待子进程结束，父进程 PID 始终保持不变。
                     </div>
                 </div>
 
-                <!-- 并行执行流程 -->
                 <div class="flow-group" style="margin-top:32px;">
                     <div class="flow-group-title">⚡ 并行执行 (& 后台运行)</div>
                     <div class="flow-row">
                         <div class="flow-node"><div class="flow-node-title">Shell (PID=1000)</div><div class="flow-node-desc">父进程持续存活</div></div>
                         <div class="flow-arrow">→</div>
-                        <div class="flow-node"><div class="flow-node-title">fork() #1</div><div class="flow-node-desc">创建子进程A (PID=1001)</div></div>
+                        <div class="flow-node"><div class="flow-node-title">fork()</div><div class="flow-node-desc">创建子进程</div></div>
                         <div class="flow-arrow">→</div>
-                        <div class="flow-node"><div class="flow-node-title">execve()</div><div class="flow-node-desc">命令1 后台运行</div></div>
+                        <div class="flow-node"><div class="flow-node-title">execve()</div><div class="flow-node-desc">命令后台运行</div></div>
                     </div>
                     <div class="flow-row">
-                        <div class="flow-arrow" style="visibility:hidden;">→</div>
-                        <div class="flow-node"><div class="flow-node-title">Shell (PID=1000)</div><div class="flow-node-desc"><strong style="color:#1f6e43;">不 wait()，立即返回</strong></div></div>
+                        <div class="flow-node"><div class="flow-node-title">Shell (PID=1000)</div><div class="flow-node-desc"><strong>不 wait()，立即返回</strong></div></div>
                         <div class="flow-arrow">→</div>
-                        <div class="flow-node"><div class="flow-node-title">fork() #2</div><div class="flow-node-desc">创建子进程B (PID=1002)</div></div>
-                        <div class="flow-arrow">→</div>
-                        <div class="flow-node"><div class="flow-node-title">execve()</div><div class="flow-node-desc">命令2 后台运行</div></div>
+                        <div class="flow-node"><div class="flow-node-title">子进程独立运行</div><div class="flow-node-desc">父进程不阻塞</div></div>
                     </div>
-                    <div class="flow-row">
-                        <div class="flow-node"><div class="flow-node-title">Shell (PID=1000)</div><div class="flow-node-desc">继续接受用户输入</div></div>
-                        <div class="flow-arrow">⏰</div>
-                        <div class="flow-node"><div class="flow-node-title">子进程A/B 独立运行</div><div class="flow-node-desc">父进程不阻塞</div></div>
-                    </div>
-                    <div style="margin-top:16px; padding:12px; background:#eef3fa; border-radius:12px; font-size:.85rem;">
-                        💡 <strong>父进程存活保证</strong>：Shell 调用 <code>fork()</code> 后<strong>不调用 wait()</strong>，子进程成为孤儿进程会被 init (PID=1) 收养，但<strong>父进程 Shell (PID=1000) 始终保持存活</strong>，继续处理后续命令。子进程退出时通过 <code>SIGCHLD</code> 信号异步通知父进程。
+                    <div style="margin-top:16px; padding:12px; background:#eef3fa; border-radius:12px;">
+                        💡 <strong>父进程存活保证</strong>：Shell 调用 <code>fork()</code> 后不调用 <code>wait()</code>，父进程 PID 始终保持不变，子进程退出时通过 <code>SIGCHLD</code> 信号异步通知。
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 进程树可视化 -->
     <div class="card">
         <div class="card-title">🌲 进程树结构演示 <span>PID 关系图</span></div>
         <div class="card-content">
@@ -139,254 +91,6 @@
                 <div class="tree-line">├─ init (PID=1) ─── 系统根进程</div>
                 <div class="tree-line">│   └─ <span class="shell-badge">bash/zsh (PID=1000) ─── Shell 父进程 (始终存活)</span></div>
                 <div class="tree-line">│       ├─ <span class="child-badge">├─ ls (PID=1001) ─── 串行执行，wait() 等待退出</span></div>
-                <div class="tree-line">│       │   └─ [已退出，僵尸状态由父进程回收]</div>
                 <div class="tree-line">│       ├─ <span class="child-badge">├─ grep (PID=1002) ─── 串行执行</span></div>
-                <div class="tree-line">│       │   └─ [已退出]</div>
                 <div class="tree-line">│       ├─ <span class="child-badge">├─ sleep 100 & (PID=1003) ─── 后台并行，父进程不等待</span></div>
-                <div class="tree-line">│       │   └─ [独立运行，父进程继续]</div>
                 <div class="tree-line">│       └─ <span class="child-badge">└─ python server.py & (PID=1004) ─── 后台并行</span></div>
-                <div class="tree-line">│           └─ [独立运行]</div>
-                <div class="tree-line" style="margin-top:12px; color:#5f7f9a;">✨ 关键：无论串行还是并行，<strong>Shell 父进程 (PID=1000) 始终保持存活</strong>，直到用户 exit 或收到终止信号。</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 信号处理机制 -->
-    <div class="card">
-        <div class="card-title">📡 信号处理机制 <span>SIGCHLD · SIGINT · SIGTERM</span></div>
-        <div class="card-content">
-            <div id="signals-table"></div>
-            <div style="margin-top:20px; padding:16px; background:#f1f5f9; border-radius:16px;">
-                <strong>🔧 子进程退出时的父进程存活保证：</strong><br>
-                1️⃣ 子进程终止时，内核发送 <code>SIGCHLD</code> 信号给父进程。<br>
-                2️⃣ Shell 的信号处理函数调用 <code>waitpid()</code> 回收子进程资源，避免僵尸进程。<br>
-                3️⃣ <strong>父进程 Shell 本身不会因为子进程退出而退出</strong>，除非显式收到 SIGINT (Ctrl+C) 或 SIGTERM。<br>
-                4️⃣ 若父进程在子进程退出前死亡，子进程被 init (PID=1) 收养，继续运行。
-            </div>
-        </div>
-    </div>
-
-    <!-- 命令执行细节笔记 -->
-    <div class="card">
-        <div class="card-title">📝 执行细节笔记 <span>点击展开查看深度解析</span></div>
-        <div class="card-content">
-            <div id="execution-details-table"></div>
-        </div>
-    </div>
-
-    <div class="footnote">📖 点击每个术语/命令旁的「>」展开查看详细笔记 | 父进程 PID 在整个生命周期中保持不变，保证 Shell 持续运行</div>
-</div>
-
-<script>
-    // ======================= 笔记数据 =======================
-    let notesData = {
-        "term_fork": [{"content": "fork() 创建子进程时，子进程获得父进程数据段、堆栈的完整副本，但 PID 不同。父子进程共享代码段。fork 返回两次：父进程返回子进程 PID，子进程返回 0。这是 Unix 创建新进程的唯一方法。", "time": "2026-03-27 16:30:22"}],
-        "term_execve": [{"content": "execve() 系列函数 (execl, execp, execv) 将当前进程的地址空间完全替换为新程序的代码段、数据段、堆栈。exec 成功后不会返回，除非出错。Shell 先 fork 再 exec 是经典的「fork-exec」模型，保证父进程不被覆盖。", "time": "2026-03-27 16:32:15"}],
-        "term_wait": [{"content": "wait() / waitpid() 让父进程阻塞直到子进程状态改变。回收子进程的退出状态，避免僵尸进程 (zombie)。串行命令必须 wait，否则子进程会变成孤儿。", "time": "2026-03-27 16:34:08"}],
-        "term_sigchld": [{"content": "SIGCHLD 是子进程状态变化时 (终止/暂停/继续) 发送给父进程的信号。Shell 通常设置 SIGCHLD 处理函数，在其中调用 waitpid 异步回收子进程，既保证父进程不被阻塞，又防止僵尸进程堆积。", "time": "2026-03-27 16:36:22"}],
-        "term_orphan": [{"content": "孤儿进程：父进程先于子进程退出，此时子进程被 init (PID=1) 收养，init 会负责回收。后台运行命令 (&) 如果 Shell 退出，子进程会变成孤儿继续运行。", "time": "2026-03-27 16:38:45"}],
-        "detail_serial": [{"content": "串行命令示例: cmd1; cmd2; cmd3\n执行流程:\n1. fork() → execve(cmd1) → wait()\n2. fork() → execve(cmd2) → wait()\n3. fork() → execve(cmd3) → wait()\n父进程在每一步都等待，确保命令顺序执行，父进程 PID 始终不变。", "time": "2026-03-27 16:40:00"}],
-        "detail_parallel": [{"content": "并行命令示例: cmd1 & cmd2 & cmd3 &\n执行流程:\n1. fork() → execve(cmd1) → 不等待，立即返回\n2. fork() → execve(cmd2) → 不等待\n3. fork() → execve(cmd3) → 不等待\n父进程 Shell 继续接受输入，子进程在后台并发运行。通过 SIGCHLD 异步回收。", "time": "2026-03-27 16:42:30"}],
-        "detail_pipe": [{"content": "管道命令: cmd1 | cmd2\nShell 创建管道，fork 两个子进程，分别重定向 stdin/stdout 到管道两端，然后等待两个子进程结束。父进程仍然存活。", "time": "2026-03-27 16:44:15"}]
-    };
-
-    function getNoteList(key) { return notesData[key] || []; }
-    let expandStates = {};
-
-    function renderFullWidthNotesPanel(key) {
-        const notes = getNoteList(key);
-        const container = document.createElement('div');
-        if(notes.length===0){
-            const empty=document.createElement('div');
-            empty.className='empty-notes-msg';
-            empty.textContent='📭 暂无笔记';
-            container.appendChild(empty);
-        } else {
-            notes.forEach((note)=>{
-                const div=document.createElement('div');
-                div.className='note-item';
-                const line=document.createElement('div');
-                line.className='note-line';
-                const timeSpan=document.createElement('span');
-                timeSpan.className='note-time-badge';
-                timeSpan.innerHTML=`📅 ${note.time}`;
-                const contentSpan=document.createElement('span');
-                contentSpan.className='note-content-text';
-                contentSpan.innerHTML = note.content;
-                line.appendChild(timeSpan);
-                line.appendChild(contentSpan);
-                div.appendChild(line);
-                container.appendChild(div);
-            });
-        }
-        return container;
-    }
-
-    function createFieldWithToggle(fieldName, key, noteCount, isExpanded, onToggle){
-        const wrap=document.createElement('div');
-        wrap.className='field-container';
-        const nameSpan=document.createElement('span');
-        nameSpan.className='term-name';
-        nameSpan.textContent=fieldName;
-        const toggleBtn=document.createElement('button');
-        toggleBtn.className='notes-toggle';
-        toggleBtn.innerHTML=isExpanded?'✔':'>';
-        const countSpan=document.createElement('span');
-        countSpan.className='notes-count';
-        countSpan.textContent=`${noteCount}`;
-        wrap.appendChild(nameSpan);
-        wrap.appendChild(toggleBtn);
-        if(noteCount>0) wrap.appendChild(countSpan);
-        toggleBtn.onclick=onToggle;
-        return wrap;
-    }
-
-    // 核心术语表格
-    function renderCoreTerms() {
-        const data = [
-            {term:"fork()",desc:"创建子进程的系统调用。子进程获得父进程的副本，拥有独立的 PID。返回两次。"},
-            {term:"execve() / exec族",desc:"加载并执行新程序，替换当前进程的地址空间。成功不返回，失败返回 -1。"},
-            {term:"wait() / waitpid()",desc:"父进程阻塞等待子进程状态变化，回收子进程资源，获取退出状态码。"},
-            {term:"SIGCHLD",desc:"子进程终止/停止/继续时，内核发送给父进程的信号。Shell 通过此信号异步回收子进程。"},
-            {term:"孤儿进程",desc:"父进程先于子进程退出，子进程被 init (PID=1) 收养，继续运行。"},
-            {term:"僵尸进程",desc:"子进程已退出但父进程未调用 wait() 回收，进程描述符仍保留，占用内核资源。"},
-            {term:"前台/后台",desc:"前台命令阻塞 Shell 等待；后台命令 (&) 不阻塞，Shell 立即返回。"}
-        ];
-        const c = document.getElementById('core-terms-table');
-        if(!c) return;
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        const header = document.createElement('tr');
-        ['术语', '说明'].forEach(col=>{ const th=document.createElement('th'); th.textContent=col; header.appendChild(th); });
-        thead.appendChild(header);
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        data.forEach(item => {
-            const key = `term_${item.term.replace(/[()]/g, '')}`;
-            const noteCount = getNoteList(key).length;
-            const isExpanded = expandStates[key] || false;
-            const mainRow = document.createElement('tr');
-
-            const td1 = document.createElement('td');
-            const btnWrap = createFieldWithToggle(item.term, key, noteCount, isExpanded, () => {
-                expandStates[key] = !expandStates[key];
-                renderCoreTerms();
-                renderExecutionDetails();
-            });
-            td1.appendChild(btnWrap);
-            mainRow.appendChild(td1);
-
-            const td2 = document.createElement('td');
-            td2.innerHTML = `<span class="term-desc">${item.desc}</span>`;
-            mainRow.appendChild(td2);
-            tbody.appendChild(mainRow);
-
-            if(isExpanded){
-                const expandRow = document.createElement('tr');
-                expandRow.className = 'notes-expand-row';
-                const expandCell = document.createElement('td');
-                expandCell.colSpan = 2;
-                expandCell.className = 'notes-expand-cell';
-                expandCell.appendChild(renderFullWidthNotesPanel(key));
-                expandRow.appendChild(expandCell);
-                tbody.appendChild(expandRow);
-            }
-        });
-        table.appendChild(tbody);
-        c.innerHTML = '';
-        c.appendChild(table);
-    }
-
-    // 信号表格
-    function renderSignals() {
-        const data = [
-            {signal:"SIGINT (2)",action:"用户按 Ctrl+C 发送，Shell 向前台进程组发送此信号，默认终止进程。Shell 本身可捕获处理。"},
-            {signal:"SIGTERM (15)",action:"优雅终止信号，可由 kill 命令发送，进程可捕获并执行清理工作。"},
-            {signal:"SIGKILL (9)",action:"强制终止信号，进程无法捕获或忽略，立即终止。"},
-            {signal:"SIGTSTP (20)",action:"Ctrl+Z 发送，暂停前台进程，Shell 可将进程放入后台 (bg) 或恢复 (fg)。"},
-            {signal:"SIGCONT (18)",action:"继续执行被暂停的进程，fg/bg 命令会发送此信号。"},
-            {signal:"SIGHUP (1)",action:"终端关闭时发送给会话首进程，Shell 可决定是否终止子进程 (nohup 忽略此信号)。"}
-        ];
-        const c = document.getElementById('signals-table');
-        if(!c) return;
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        const header = document.createElement('tr');
-        ['信号', '作用与 Shell 行为'].forEach(col=>{ const th=document.createElement('th'); th.textContent=col; header.appendChild(th); });
-        thead.appendChild(header);
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        data.forEach(item => {
-            const row = document.createElement('tr');
-            const td1 = document.createElement('td');
-            td1.innerHTML = `<code style="background:#eef2fa;padding:4px 10px;">${item.signal}</code>`;
-            const td2 = document.createElement('td');
-            td2.innerHTML = `<span style="color:#2c5a74;">${item.action}</span>`;
-            row.appendChild(td1);
-            row.appendChild(td2);
-            tbody.appendChild(row);
-        });
-        table.appendChild(tbody);
-        c.innerHTML = '';
-        c.appendChild(table);
-    }
-
-    // 执行细节表格
-    function renderExecutionDetails() {
-        const data = [
-            {type:"串行命令 (; / && / ||)",desc:"每个命令 fork 子进程执行，父进程 wait() 阻塞等待，保证顺序执行，父进程 PID 不变。"},
-            {type:"并行命令 (&)",desc:"fork 后不 wait，子进程后台运行，父进程立即返回，通过 SIGCHLD 异步回收。"},
-            {type:"管道命令 (|)",desc:"Shell 创建管道，fork 多个子进程，重定向 stdin/stdout，父进程等待所有子进程结束。"},
-            {type:"子 shell ( (cmd) )",desc:"fork 新子 shell 执行命令组，父 shell 等待子 shell 退出，PID 层级加深。"}
-        ];
-        const c = document.getElementById('execution-details-table');
-        if(!c) return;
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        const header = document.createElement('tr');
-        ['执行模式', '说明与父进程行为'].forEach(col=>{ const th=document.createElement('th'); th.textContent=col; header.appendChild(th); });
-        thead.appendChild(header);
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        data.forEach(item => {
-            const key = `detail_${item.type.replace(/[^a-zA-Z]/g, '_')}`;
-            const noteCount = getNoteList(key).length;
-            const isExpanded = expandStates[key] || false;
-            const mainRow = document.createElement('tr');
-
-            const td1 = document.createElement('td');
-            const btnWrap = createFieldWithToggle(item.type, key, noteCount, isExpanded, () => {
-                expandStates[key] = !expandStates[key];
-                renderExecutionDetails();
-            });
-            td1.appendChild(btnWrap);
-            mainRow.appendChild(td1);
-
-            const td2 = document.createElement('td');
-            td2.innerHTML = `<span style="color:#2c5a74;">${item.desc}</span>`;
-            mainRow.appendChild(td2);
-            tbody.appendChild(mainRow);
-
-            if(isExpanded){
-                const expandRow = document.createElement('tr');
-                expandRow.className = 'notes-expand-row';
-                const expandCell = document.createElement('td');
-                expandCell.colSpan = 2;
-                expandCell.className = 'notes-expand-cell';
-                expandCell.appendChild(renderFullWidthNotesPanel(key));
-                expandRow.appendChild(expandCell);
-                tbody.appendChild(expandRow);
-            }
-        });
-        table.appendChild(tbody);
-        c.innerHTML = '';
-        c.appendChild(table);
-    }
-
-    // 初始化渲染
-    renderCoreTerms();
-    renderSignals();
-    renderExecutionDetails();
-</script>
-</body>
-</html>

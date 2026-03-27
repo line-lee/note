@@ -1,6 +1,13 @@
-<div class="env-section">
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go通用环境变量</title>
     <style>
-        .env-section{font-family:'Segoe UI',Roboto,system-ui;background:#f8fafc;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Segoe UI',Roboto,system-ui;background:#f8fafc;padding:32px;}
+        .env-section{max-width:1400px;margin:0 auto;}
         .env-card{background:#fff;border-radius:28px;overflow-x:auto;border:1px solid #eef2f8;}
         .env-title{font-size:1.45rem;font-weight:600;padding:20px 24px 12px;border-bottom:2px solid #eef2f8;display:flex;align-items:center;gap:12px;}
         .env-title span{background:#e9f0f5;font-size:.75rem;padding:4px 12px;border-radius:40px;color:#006688;}
@@ -8,144 +15,65 @@
         th{text-align:left;padding:14px 20px;background:#fafcff;font-weight:600;color:#1f4b5e;border-bottom:1px solid #e6edf4;}
         td{padding:12px 20px;border-bottom:1px solid #eff3f9;vertical-align:top;}
         .var-name{font-family:'Fira Code',monospace;font-weight:600;background:#fef6f9;border-radius:8px;padding:2px 8px;font-size:.82rem;display:inline-block;color:#c7254e;}
-        .notes-toggle{background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 8px;border-radius:20px;color:#a47c48;font-weight:bold;}
-        .notes-toggle:hover{background:#f0e6d8;}
-        .notes-count{font-size:.65rem;background:#f5e6d3;border-radius:30px;padding:2px 6px;color:#b87c3a;margin-left:6px;}
-        .notes-expand-row{background:#fefaf5;}
-        .notes-expand-cell{padding:12px 20px!important;background:#fefaf5;}
-        .note-item{background:#fffaf0;border-radius:12px;padding:10px 12px;margin:8px 0;border:1px solid #f0e2cf;}
-        .note-line{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
-        .note-time-badge{font-size:.7rem;color:#b2894b;background:#f7efe3;padding:2px 8px;border-radius:20px;white-space:nowrap;}
-        .note-content-text{flex:1;color:#5e3a1f;word-break:break-word;white-space:pre-wrap;font-family:'Fira Code',monospace;font-size:0.85rem;line-height:1.6;}
-        .empty-notes-msg{font-size:.7rem;color:#b0a088;font-style:italic;padding:8px 0;}
-        .field-container{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-        .footnote{font-size:.75rem;color:#6a7f94;margin-top:20px;text-align:center;padding-top:18px;}
         code{background:#f1f5f9;padding:2px 6px;border-radius:8px;font-family:monospace;font-size:.8rem;}
     </style>
+</head>
+<body>
+<div class="env-section">
     <div class="env-card">
         <div class="env-title">📦 通用环境变量 <span>核心配置</span></div>
         <div id="general-env-table"></div>
     </div>
-    <div class="footnote">📖 点击字段旁的「>」展开查看笔记</div>
 </div>
 
 <script>
-    (function(){
-        const notesData = {
-            "env_general_GO111MODULE": [{"content": "GO111MODULE 是 Go 1.11 引入的模块化过渡开关，其 GO{版本号}{特性名} 的命名模式直观反映了功能的引入版本和临时性质；它成功完成了从 GOPATH 到 Go Modules 的渐进式迁移使命，随着 Go 1.16 将 Modules 设为默认模式，这个以版本号命名的临时开关正在淡出历史舞台，成为 Go 语言演进哲学——“通过版本化实验开关实现平滑过渡”的典型注脚", "time": "2026-03-26 15:27:22"}],
-            "env_general_GOPATH": [{"content": "GOPATH 是 Go 语言发展史上的重要里程碑，见证了 Go 从诞生到成熟的完整历程。作为项目管理模式，它已被 Go Modules 完全取代；作为环境变量，其各项职能正被 GOMODCACHE、GOCACHE、GOBIN 等新变量逐步拆分替代。GOPATH 正在完成它的历史使命，终将淡出 Go 开发生态，成为一段被铭记的历史", "time": "2026-03-26 15:27:22"}],
-            "env_general_CGO_ENABLED": [{"content": "【必须开启的场景】\n当代码依赖 C 库时，必须设置 CGO_ENABLED=1。\n\n【典型案例】\nconfluent-kafka-go 依赖 librdkafka，需安装：\n• gcc\n• pkg-config  \n• librdkafka-dev\n\n【开启代价】\n• 失去单二进制部署便利\n• 增加构建环境复杂度\n• 交叉编译困难\n\n【替代方案】\n纯 Go Kafka 客户端可完全避开 CGO：\n• kafka-go — API 简洁\n• franz-go — 高性能\n• sarama — 功能全\n\n【核心原则】\n非必要不开启，能用纯 Go 就不用 CGO。", "time": "2026-03-26 17:45:00"}],
-            "env_general_GODEBUG": [{"content": "运行时调试利器，例如 GODEBUG=gctrace=1 可打印GC日志，inittrace=1 追踪init函数耗时，http2client=0 禁用HTTP/2用于调试", "time": "2026-03-27 10:12:33"}],
-            "env_general_GOPROXY": [{"content": "推荐使用 goproxy.cn 或 goproxy.io 作为国内代理，加速模块下载", "time": "2026-03-27 11:20:00"}]
-        };
+    const envData = [
+        {name:"GO111MODULE", desc:"控制模块感知模式: off, on, auto"},
+        {name:"GCCGO", desc:"gccgo命令路径"},
+        {name:"GOARCH", desc:"目标架构"},
+        {name:"GOBIN", desc:"go install安装目录"},
+        {name:"GOCACHE", desc:"构建缓存目录"},
+        {name:"GOMODCACHE", desc:"模块下载缓存目录"},
+        {name:"GODEBUG", desc:"控制运行时调试输出，如 gctrace=1, inittrace=1"},
+        {name:"GOENV", desc:"Go环境配置文件位置"},
+        {name:"GOFLAGS", desc:"默认flag列表"},
+        {name:"GOINSECURE", desc:"允许不安全HTTP获取的模块前缀"},
+        {name:"GOOS", desc:"目标操作系统"},
+        {name:"GOPATH", desc:"工作区根目录（已被Go Modules取代）"},
+        {name:"GOPROXY", desc:"模块代理URL"},
+        {name:"GOPRIVATE", desc:"私有模块glob模式"},
+        {name:"GONOPROXY", desc:"不走代理的模块"},
+        {name:"GONOSUMDB", desc:"不走校验和的模块"},
+        {name:"GOROOT", desc:"Go安装根目录"},
+        {name:"GOSUMDB", desc:"校验和数据库"},
+        {name:"GOTOOLCHAIN", desc:"工具链版本控制"},
+        {name:"GOTMPDIR", desc:"临时文件目录"},
+        {name:"GOVCS", desc:"限制版本控制系统"},
+        {name:"GOWORK", desc:"工作区文件路径"},
+        {name:"GOTELEMETRY", desc:"遥测数据收集模式: local, on, off"},
+        {name:"CGO_ENABLED", desc:"是否启用CGO，1=启用，0=禁用"},
+        {name:"CC", desc:"C编译器路径，CGO依赖"},
+        {name:"CXX", desc:"C++编译器路径"},
+        {name:"AR", desc:"归档工具(ar)路径"},
+        {name:"PKG_CONFIG", desc:"pkg-config工具路径"}
+    ];
 
-        function getNoteList(key) { return notesData[key] || []; }
-        let expandStates = {};
+    function renderEnv() {
+        const container = document.getElementById('general-env-table');
+        if(!container) return;
 
-        function renderFullWidthNotesPanel(key) {
-            const notes = getNoteList(key);
-            const container = document.createElement('div');
-            if(notes.length===0){
-                const empty=document.createElement('div');
-                empty.className='empty-notes-msg';
-                empty.textContent='📭 暂无笔记';
-                container.appendChild(empty);
-            } else {
-                notes.forEach((note)=>{
-                    const div=document.createElement('div');
-                    div.className='note-item';
-                    const line=document.createElement('div');
-                    line.className='note-line';
-                    const timeSpan=document.createElement('span');
-                    timeSpan.className='note-time-badge';
-                    timeSpan.innerHTML=`📅 ${note.time}`;
-                    const contentSpan=document.createElement('span');
-                    contentSpan.className='note-content-text';
-                    contentSpan.innerHTML = note.content;
-                    line.appendChild(timeSpan);
-                    line.appendChild(contentSpan);
-                    div.appendChild(line);
-                    container.appendChild(div);
-                });
-            }
-            return container;
+        let html = '<table><thead><tr><th>变量名</th><th>描述/用途</th></tr></thead><tbody>';
+        for (const item of envData) {
+            html += `<tr>
+                <td><span class="var-name">${item.name}</span></td>
+                <td>${item.desc}</td>
+            </tr>`;
         }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
 
-        function createFieldWithToggle(fieldName, key, noteCount, isExpanded, onToggle){
-            const wrap=document.createElement('div');
-            wrap.className='field-container';
-            const nameSpan=document.createElement('span');
-            nameSpan.className='var-name';
-            nameSpan.textContent=fieldName;
-            const toggleBtn=document.createElement('button');
-            toggleBtn.className='notes-toggle';
-            toggleBtn.innerHTML=isExpanded?'✔':'>';
-            const countSpan=document.createElement('span');
-            countSpan.className='notes-count';
-            countSpan.textContent=`${noteCount}`;
-            wrap.appendChild(nameSpan);
-            wrap.appendChild(toggleBtn);
-            if(noteCount>0) wrap.appendChild(countSpan);
-            toggleBtn.onclick=onToggle;
-            return wrap;
-        }
-
-        function renderTable() {
-            const data = [
-                {name:"GO111MODULE",desc:"控制模块感知模式: off, on, auto。 <a href='https://golang.org/ref/mod#mod-commands' target='_blank'>参考</a>"},
-                {name:"GCCGO",desc:"gccgo命令路径"},{name:"GOARCH",desc:"目标架构"},{name:"GOBIN",desc:"go install安装目录"},
-                {name:"GOCACHE",desc:"构建缓存目录"},{name:"GOMODCACHE",desc:"模块下载缓存目录"},
-                {name:"GODEBUG",desc:"控制运行时调试输出，如 gctrace=1, inittrace=1, http2client=0 等"},
-                {name:"GOENV",desc:"Go环境配置文件位置"},{name:"GOFLAGS",desc:"默认flag列表"},{name:"GOINSECURE",desc:"允许不安全HTTP获取的模块前缀"},
-                {name:"GOOS",desc:"目标操作系统"},{name:"GOPATH",desc:"工作区根目录（已被Go Modules取代）"},{name:"GOPROXY",desc:"模块代理URL"},
-                {name:"GOPRIVATE/GONOPROXY/GONOSUMDB",desc:"私有模块glob模式"},{name:"GOROOT",desc:"Go安装根目录"},{name:"GOSUMDB",desc:"校验和数据库"},
-                {name:"GOTOOLCHAIN",desc:"工具链版本控制"},{name:"GOTMPDIR",desc:"临时文件目录"},{name:"GOVCS",desc:"限制版本控制系统"},
-                {name:"GOWORK",desc:"工作区文件路径"},{name:"GOTELEMETRY",desc:"遥测数据收集模式: local(默认), on, off"},{name:"CGO_ENABLED",desc:"是否启用CGO，1=启用，0=禁用"},
-                {name:"CC",desc:"C编译器路径，CGO依赖"},{name:"CXX",desc:"C++编译器路径"},{name:"AR",desc:"归档工具(ar)路径"},{name:"PKG_CONFIG",desc:"pkg-config工具路径"}
-            ];
-            const c = document.getElementById('general-env-table');
-            if(!c) return;
-            const table = document.createElement('table');
-            const thead = document.createElement('thead');
-            const header = document.createElement('tr');
-            ['变量名', '描述/用途'].forEach(col=>{ const th=document.createElement('th'); th.textContent=col; header.appendChild(th); });
-            thead.appendChild(header);
-            table.appendChild(thead);
-            const tbody = document.createElement('tbody');
-            data.forEach(item => {
-                const key = `env_general_${item.name}`;
-                const noteCount = getNoteList(key).length;
-                const isExpanded = expandStates[key] || false;
-                const mainRow = document.createElement('tr');
-
-                const td1 = document.createElement('td');
-                const btnWrap = createFieldWithToggle(item.name, key, noteCount, isExpanded, () => {
-                    expandStates[key] = !expandStates[key];
-                    renderTable();
-                });
-                td1.appendChild(btnWrap);
-                mainRow.appendChild(td1);
-
-                const td2 = document.createElement('td');
-                td2.innerHTML = `<span style="font-weight:500;">${item.desc}</span>`;
-                mainRow.appendChild(td2);
-                tbody.appendChild(mainRow);
-
-                if(isExpanded){
-                    const expandRow = document.createElement('tr');
-                    expandRow.className = 'notes-expand-row';
-                    const expandCell = document.createElement('td');
-                    expandCell.colSpan = 2;
-                    expandCell.className = 'notes-expand-cell';
-                    expandCell.appendChild(renderFullWidthNotesPanel(key));
-                    expandRow.appendChild(expandCell);
-                    tbody.appendChild(expandRow);
-                }
-            });
-            table.appendChild(tbody);
-            c.innerHTML = '';
-            c.appendChild(table);
-        }
-        renderTable();
-    })();
+    renderEnv();
 </script>
+</body>
+</html>
