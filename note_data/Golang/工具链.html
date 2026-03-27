@@ -1,0 +1,152 @@
+<div class="toolchain-section">
+    <style>
+        .toolchain-section{font-family:'Segoe UI',Roboto,system-ui;background:#f8fafc;}
+        .toolchain-card{background:#fff;border-radius:28px;overflow-x:auto;border:1px solid #eef2f8;}
+        .toolchain-title{font-size:1.45rem;font-weight:600;padding:20px 24px 12px;border-bottom:2px solid #eef2f8;display:flex;align-items:center;gap:12px;}
+        .toolchain-title span{background:#e9f0f5;font-size:.75rem;padding:4px 12px;border-radius:40px;color:#006688;}
+        table{width:100%;border-collapse:collapse;font-size:.88rem;}
+        th{text-align:left;padding:14px 20px;background:#fafcff;font-weight:600;color:#1f4b5e;border-bottom:1px solid #e6edf4;}
+        td{padding:12px 20px;border-bottom:1px solid #eff3f9;vertical-align:top;}
+        .tool-name{font-family:'Fira Code',monospace;font-weight:600;background:#eefaf3;border-radius:8px;padding:2px 8px;font-size:.82rem;display:inline-block;color:#1f6e43;}
+        .notes-toggle{background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 8px;border-radius:20px;color:#a47c48;font-weight:bold;}
+        .notes-toggle:hover{background:#f0e6d8;}
+        .notes-count{font-size:.65rem;background:#f5e6d3;border-radius:30px;padding:2px 6px;color:#b87c3a;margin-left:6px;}
+        .notes-expand-row{background:#fefaf5;}
+        .notes-expand-cell{padding:12px 20px!important;background:#fefaf5;}
+        .note-item{background:#fffaf0;border-radius:12px;padding:10px 12px;margin:8px 0;border:1px solid #f0e2cf;}
+        .note-line{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+        .note-time-badge{font-size:.7rem;color:#b2894b;background:#f7efe3;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+        .note-content-text{flex:1;color:#5e3a1f;word-break:break-word;white-space:pre-wrap;font-family:'Fira Code',monospace;font-size:0.85rem;line-height:1.6;}
+        .empty-notes-msg{font-size:.7rem;color:#b0a088;font-style:italic;padding:8px 0;}
+        .field-container{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+        code{background:#f1f5f9;padding:2px 6px;border-radius:8px;font-family:monospace;font-size:.8rem;}
+        .footnote{font-size:.75rem;color:#6a7f94;margin-top:20px;text-align:center;padding-top:18px;}
+    </style>
+    <div class="toolchain-card">
+        <div class="toolchain-title">🔨 Go工具链 <span>位于 $GOTOOLDIR</span></div>
+        <div id="toolchain-table"></div>
+    </div>
+    <div class="footnote">📖 点击工具名旁的「>」展开查看笔记</div>
+</div>
+
+<script>
+    (function(){
+        const notesData = {
+            "tool_compile": [{"content": "编译时注意使用 -gcflags='-l' 禁用内联便于调试，-m 可查看优化和内联决策", "time": "2025-01-16 14:20:33"}],
+            "tool_link": [{"content": "链接器支持 -ldflags 传递参数，如 -ldflags='-X main.version=1.0.0' 注入版本信息", "time": "2026-03-27 15:20:00"}],
+            "tool_pprof": [{"content": "性能分析工具：go tool pprof -http=:8080 profile.out 可生成可视化报告", "time": "2026-03-27 15:25:00"}]
+        };
+
+        function getNoteList(key) { return notesData[key] || []; }
+        let expandStates = {};
+
+        function renderFullWidthNotesPanel(key) {
+            const notes = getNoteList(key);
+            const container = document.createElement('div');
+            if(notes.length===0){
+                const empty=document.createElement('div');
+                empty.className='empty-notes-msg';
+                empty.textContent='📭 暂无笔记';
+                container.appendChild(empty);
+            } else {
+                notes.forEach((note)=>{
+                    const div=document.createElement('div');
+                    div.className='note-item';
+                    const line=document.createElement('div');
+                    line.className='note-line';
+                    const timeSpan=document.createElement('span');
+                    timeSpan.className='note-time-badge';
+                    timeSpan.innerHTML=`📅 ${note.time}`;
+                    const contentSpan=document.createElement('span');
+                    contentSpan.className='note-content-text';
+                    contentSpan.innerHTML = note.content;
+                    line.appendChild(timeSpan);
+                    line.appendChild(contentSpan);
+                    div.appendChild(line);
+                    container.appendChild(div);
+                });
+            }
+            return container;
+        }
+
+        function createFieldWithToggle(toolName, key, noteCount, isExpanded, onToggle){
+            const wrap=document.createElement('div');
+            wrap.className='field-container';
+            const nameSpan=document.createElement('span');
+            nameSpan.className='tool-name';
+            nameSpan.textContent=toolName;
+            const toggleBtn=document.createElement('button');
+            toggleBtn.className='notes-toggle';
+            toggleBtn.innerHTML=isExpanded?'✔':'>';
+            const countSpan=document.createElement('span');
+            countSpan.className='notes-count';
+            countSpan.textContent=`${noteCount}`;
+            wrap.appendChild(nameSpan);
+            wrap.appendChild(toggleBtn);
+            if(noteCount>0) wrap.appendChild(countSpan);
+            toggleBtn.onclick=onToggle;
+            return wrap;
+        }
+
+        function renderTable() {
+            const data = [
+                {name:"compile",role:"Go编译器核心",invoked:"go build"},{name:"link",role:"链接器",invoked:"go build"},
+                {name:"asm",role:"汇编器",invoked:"compile内部"},{name:"vet",role:"静态分析",invoked:"go vet"},
+                {name:"cover",role:"代码覆盖率",invoked:"go test -cover"},{name:"trace",role:"执行追踪",invoked:"go tool trace"},
+                {name:"pprof",role:"性能剖析",invoked:"go tool pprof"},{name:"nm",role:"显示符号表",invoked:"go tool nm"},
+                {name:"objdump",role:"反汇编",invoked:"go tool objdump"},{name:"addr2line",role:"地址转行号",invoked:"调试"},
+                {name:"pack",role:"归档文件",invoked:"compile间接"},{name:"cgo",role:"CGO包装",invoked:"go build"},
+                {name:"dist",role:"发行版构建",invoked:"make.bash"},{name:"test2json",role:"测试转JSON",invoked:"go test -json"},
+                {name:"buildid",role:"构建ID",invoked:"内部"},{name:"doc",role:"文档查看",invoked:"go doc"}
+            ];
+            const c = document.getElementById('toolchain-table');
+            if(!c) return;
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const header = document.createElement('tr');
+            ['工具名', '角色/功能', '通常被调用场景'].forEach(col=>{ const th=document.createElement('th'); th.textContent=col; header.appendChild(th); });
+            thead.appendChild(header);
+            table.appendChild(thead);
+            const tbody = document.createElement('tbody');
+            data.forEach(item => {
+                const key = `tool_${item.name}`;
+                const noteCount = getNoteList(key).length;
+                const isExpanded = expandStates[key] || false;
+                const mainRow = document.createElement('tr');
+
+                const td1 = document.createElement('td');
+                const btnWrap = createFieldWithToggle(item.name, key, noteCount, isExpanded, () => {
+                    expandStates[key] = !expandStates[key];
+                    renderTable();
+                });
+                td1.appendChild(btnWrap);
+                mainRow.appendChild(td1);
+
+                const td2 = document.createElement('td');
+                td2.innerHTML = `<span style="font-weight:500;">${item.role}</span>`;
+                mainRow.appendChild(td2);
+
+                const td3 = document.createElement('td');
+                td3.innerHTML = `<code>${item.invoked}</code>`;
+                mainRow.appendChild(td3);
+
+                tbody.appendChild(mainRow);
+
+                if(isExpanded){
+                    const expandRow = document.createElement('tr');
+                    expandRow.className = 'notes-expand-row';
+                    const expandCell = document.createElement('td');
+                    expandCell.colSpan = 3;
+                    expandCell.className = 'notes-expand-cell';
+                    expandCell.appendChild(renderFullWidthNotesPanel(key));
+                    expandRow.appendChild(expandCell);
+                    tbody.appendChild(expandRow);
+                }
+            });
+            table.appendChild(tbody);
+            c.innerHTML = '';
+            c.appendChild(table);
+        }
+        renderTable();
+    })();
+</script>

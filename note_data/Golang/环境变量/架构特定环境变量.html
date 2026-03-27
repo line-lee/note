@@ -1,0 +1,141 @@
+<div class="arch-section">
+    <style>
+        .arch-section{font-family:'Segoe UI',Roboto,system-ui;background:#f8fafc;}
+        .arch-card{background:#fff;border-radius:28px;overflow-x:auto;border:1px solid #eef2f8;}
+        .arch-title{font-size:1.45rem;font-weight:600;padding:20px 24px 12px;border-bottom:2px solid #eef2f8;display:flex;align-items:center;gap:12px;}
+        .arch-title span{background:#e9f0f5;font-size:.75rem;padding:4px 12px;border-radius:40px;color:#006688;}
+        table{width:100%;border-collapse:collapse;font-size:.88rem;}
+        th{text-align:left;padding:14px 20px;background:#fafcff;font-weight:600;color:#1f4b5e;border-bottom:1px solid #e6edf4;}
+        td{padding:12px 20px;border-bottom:1px solid #eff3f9;vertical-align:top;}
+        .var-name{font-family:'Fira Code',monospace;font-weight:600;background:#fef6f9;border-radius:8px;padding:2px 8px;font-size:.82rem;display:inline-block;color:#c7254e;}
+        .notes-toggle{background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 8px;border-radius:20px;color:#a47c48;font-weight:bold;}
+        .notes-toggle:hover{background:#f0e6d8;}
+        .notes-count{font-size:.65rem;background:#f5e6d3;border-radius:30px;padding:2px 6px;color:#b87c3a;margin-left:6px;}
+        .notes-expand-row{background:#fefaf5;}
+        .notes-expand-cell{padding:12px 20px!important;background:#fefaf5;}
+        .note-item{background:#fffaf0;border-radius:12px;padding:10px 12px;margin:8px 0;border:1px solid #f0e2cf;}
+        .note-line{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+        .note-time-badge{font-size:.7rem;color:#b2894b;background:#f7efe3;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+        .note-content-text{flex:1;color:#5e3a1f;word-break:break-word;white-space:pre-wrap;font-family:'Fira Code',monospace;font-size:0.85rem;line-height:1.6;}
+        .empty-notes-msg{font-size:.7rem;color:#b0a088;font-style:italic;padding:8px 0;}
+        .field-container{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+        .footnote{font-size:.75rem;color:#6a7f94;margin-top:20px;text-align:center;padding-top:18px;}
+    </style>
+    <div class="arch-card">
+        <div class="arch-title">🖥️ 架构特定环境变量 <span>GOARM/GOAMD64</span></div>
+        <div id="arch-env-table"></div>
+    </div>
+    <div class="footnote">📖 点击字段旁的「>」展开查看笔记</div>
+</div>
+
+<script>
+    (function(){
+        const notesData = {
+            "env_arch_GOARM": [{"content": "ARM架构版本选择：GOARM=5 (ARMv5), GOARM=6 (ARMv6), GOARM=7 (ARMv7)。默认值为7，设置为5可获得更好的兼容性但性能较低", "time": "2026-03-27 14:30:00"}],
+            "env_arch_GOAMD64": [{"content": "AMD64微架构级别：v1(默认), v2, v3, v4。越高性能越好但需要更新的CPU支持", "time": "2026-03-27 14:32:00"}]
+        };
+
+        function getNoteList(key) { return notesData[key] || []; }
+        let expandStates = {};
+
+        function renderFullWidthNotesPanel(key) {
+            const notes = getNoteList(key);
+            const container = document.createElement('div');
+            if(notes.length===0){
+                const empty=document.createElement('div');
+                empty.className='empty-notes-msg';
+                empty.textContent='📭 暂无笔记';
+                container.appendChild(empty);
+            } else {
+                notes.forEach((note)=>{
+                    const div=document.createElement('div');
+                    div.className='note-item';
+                    const line=document.createElement('div');
+                    line.className='note-line';
+                    const timeSpan=document.createElement('span');
+                    timeSpan.className='note-time-badge';
+                    timeSpan.innerHTML=`📅 ${note.time}`;
+                    const contentSpan=document.createElement('span');
+                    contentSpan.className='note-content-text';
+                    contentSpan.innerHTML = note.content;
+                    line.appendChild(timeSpan);
+                    line.appendChild(contentSpan);
+                    div.appendChild(line);
+                    container.appendChild(div);
+                });
+            }
+            return container;
+        }
+
+        function createFieldWithToggle(fieldName, key, noteCount, isExpanded, onToggle){
+            const wrap=document.createElement('div');
+            wrap.className='field-container';
+            const nameSpan=document.createElement('span');
+            nameSpan.className='var-name';
+            nameSpan.textContent=fieldName;
+            const toggleBtn=document.createElement('button');
+            toggleBtn.className='notes-toggle';
+            toggleBtn.innerHTML=isExpanded?'✔':'>';
+            const countSpan=document.createElement('span');
+            countSpan.className='notes-count';
+            countSpan.textContent=`${noteCount}`;
+            wrap.appendChild(nameSpan);
+            wrap.appendChild(toggleBtn);
+            if(noteCount>0) wrap.appendChild(countSpan);
+            toggleBtn.onclick=onToggle;
+            return wrap;
+        }
+
+        function renderTable() {
+            const data = [
+                {name:"GOARM",desc:"ARM架构版本 (5/6/7)"},{name:"GOARM64",desc:"ARM64扩展特性"},
+                {name:"GO386",desc:"386指令集级别 (387/sse2)"},{name:"GOAMD64",desc:"AMD64微架构级别 (v1/v2/v3/v4)"},
+                {name:"GOMIPS/GOMIPS64",desc:"MIPS浮点模式 (hardfloat/softfloat)"},{name:"GOPPC64",desc:"PowerPC版本 (power8/power9)"},
+                {name:"GORISCV64",desc:"RISC-V版本 (rv64gc)"},{name:"GOWASM",desc:"WASM实验特性 (satconv/signext)"}
+            ];
+            const c = document.getElementById('arch-env-table');
+            if(!c) return;
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const header = document.createElement('tr');
+            ['变量名', '说明'].forEach(col=>{ const th=document.createElement('th'); th.textContent=col; header.appendChild(th); });
+            thead.appendChild(header);
+            table.appendChild(thead);
+            const tbody = document.createElement('tbody');
+            data.forEach(item => {
+                const key = `env_arch_${item.name}`;
+                const noteCount = getNoteList(key).length;
+                const isExpanded = expandStates[key] || false;
+                const mainRow = document.createElement('tr');
+
+                const td1 = document.createElement('td');
+                const btnWrap = createFieldWithToggle(item.name, key, noteCount, isExpanded, () => {
+                    expandStates[key] = !expandStates[key];
+                    renderTable();
+                });
+                td1.appendChild(btnWrap);
+                mainRow.appendChild(td1);
+
+                const td2 = document.createElement('td');
+                td2.innerHTML = `<span style="font-weight:500;">${item.desc}</span>`;
+                mainRow.appendChild(td2);
+                tbody.appendChild(mainRow);
+
+                if(isExpanded){
+                    const expandRow = document.createElement('tr');
+                    expandRow.className = 'notes-expand-row';
+                    const expandCell = document.createElement('td');
+                    expandCell.colSpan = 2;
+                    expandCell.className = 'notes-expand-cell';
+                    expandCell.appendChild(renderFullWidthNotesPanel(key));
+                    expandRow.appendChild(expandCell);
+                    tbody.appendChild(expandRow);
+                }
+            });
+            table.appendChild(tbody);
+            c.innerHTML = '';
+            c.appendChild(table);
+        }
+        renderTable();
+    })();
+</script>
