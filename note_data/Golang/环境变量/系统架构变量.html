@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统架构变量 - Golang笔记</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f8fafc;
+        }
+        h1 {
+            color: #0f172a;
+            border-bottom: 3px solid #10b981;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        h2 {
+            color: #1e293b;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            padding-left: 0.5rem;
+            border-left: 4px solid #10b981;
+        }
+        .tip {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+        code {
+            background: #e2e8f0;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        th {
+            background: #f1f5f9;
+        }
+    </style>
+</head>
+<body>
+<h1>🏗️ 系统架构与交叉编译变量</h1>
+
+<div class="tip">
+    💡 <strong>核心概念</strong>：Go 支持跨平台编译，通过设置这些变量可以生成不同操作系统和架构的可执行文件。
+</div>
+
+<h2>GOOS - 目标操作系统</h2>
+<pre><code>export GOOS=linux     # Linux
+export GOOS=windows   # Windows
+export GOOS=darwin    # macOS
+export GOOS=freebsd   # FreeBSD
+export GOOS=android   # Android</code></pre>
+<table>
+    <tr><th>值</th><th>说明</th></tr>
+    <tr><td><code>linux</code></td><td>Linux 系统</td></tr>
+    <tr><td><code>windows</code></td><td>Windows 系统</td></tr>
+    <tr><td><code>darwin</code></td><td>macOS / iOS</td></tr>
+    <tr><td><code>freebsd</code></td><td>FreeBSD</td></tr>
+    <tr><td><code>netbsd</code></td><td>NetBSD</td></tr>
+    <tr><td><code>openbsd</code></td><td>OpenBSD</td></tr>
+    <tr><td><code>plan9</code></td><td>Plan 9</td></tr>
+    <tr><td><code>solaris</code></td><td>Solaris</td></tr>
+    <tr><td><code>android</code></td><td>Android</td></tr>
+    <tr><td><code>ios</code></td><td>iOS</td></tr>
+    <tr><td><code>js</code></td><td>WebAssembly</td></tr>
+</table>
+
+<h2>GOARCH - 目标架构</h2>
+<pre><code>export GOARCH=amd64    # 64位 x86
+export GOARCH=386      # 32位 x86
+export GOARCH=arm64    # 64位 ARM
+export GOARCH=arm      # 32位 ARM</code></pre>
+<table>
+    <tr><th>值</th><th>说明</th></tr>
+    <tr><td><code>amd64</code></td><td>64位 x86 架构（最常见）</td></tr>
+    <tr><td><code>386</code></td><td>32位 x86 架构</td></tr>
+    <tr><td><code>arm64</code></td><td>64位 ARM 架构（树莓派、M1/M2/M3）</td></tr>
+    <tr><td><code>arm</code></td><td>32位 ARM 架构</td></tr>
+    <tr><td><code>ppc64</code></td><td>64位 PowerPC</td></tr>
+    <tr><td><code>s390x</code></td><td>IBM S/390x</td></tr>
+    <tr><td><code>wasm</code></td><td>WebAssembly</td></tr>
+    <tr><td><code>riscv64</code></td><td>64位 RISC-V</td></tr>
+</table>
+
+<h2>常见组合示例</h2>
+<pre><code># Linux 64位
+GOOS=linux GOARCH=amd64 go build
+
+# Windows 64位
+GOOS=windows GOARCH=amd64 go build
+
+# macOS (Intel)
+GOOS=darwin GOARCH=amd64 go build
+
+# macOS (Apple Silicon)
+GOOS=darwin GOARCH=arm64 go build
+
+# 树莓派 (ARM 32位)
+GOOS=linux GOARCH=arm GOARM=7 go build
+
+# WebAssembly
+GOOS=js GOARCH=wasm go build -o main.wasm</code></pre>
+
+<h2>GOAMD64 - AMD64 微架构级别</h2>
+<p>控制 AMD64 架构的代码生成优化级别（Go 1.17+）。</p>
+<pre><code>export GOAMD64=v1   # 兼容所有 x86-64 处理器
+export GOAMD64=v2   # 需要 SSE4.2、POPCNT 等
+export GOAMD64=v3   # 需要 AVX、AVX2、BMI1/BMI2 等
+export GOAMD64=v4   # 需要 AVX512F、AVX512BW 等</code></pre>
+
+<div class="tip">
+    🔍 <strong>查看支持的组合</strong>：运行 <code>go tool dist list</code> 查看所有支持的操作系统和架构组合。
+</div>
+
+<h2>交叉编译完整示例</h2>
+<pre><code>#!/bin/bash
+# 为多个平台编译
+
+platforms=(
+    "linux/amd64"
+    "linux/arm64"
+    "windows/amd64"
+    "darwin/amd64"
+    "darwin/arm64"
+)
+
+for platform in "${platforms[@]}"; do
+    IFS='/' read -r GOOS GOARCH <<< "$platform"
+    output="myapp-${GOOS}-${GOARCH}"
+    if [ $GOOS = "windows" ]; then
+        output+='.exe'
+    fi
+
+    echo "Building for $GOOS/$GOARCH..."
+    GOOS=$GOOS GOARCH=$GOARCH go build -o "$output" .
+done</code></pre>
+</body>
+</html>

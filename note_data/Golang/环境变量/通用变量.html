@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通用环境变量 - Golang笔记</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f8fafc;
+        }
+        h1 {
+            color: #0f172a;
+            border-bottom: 3px solid #6366f1;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        h2 {
+            color: #1e293b;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            padding-left: 0.5rem;
+            border-left: 4px solid #6366f1;
+        }
+        .note {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+        code {
+            background: #e2e8f0;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        th {
+            background: #f1f5f9;
+        }
+    </style>
+</head>
+<body>
+<h1>📦 Go 通用环境变量</h1>
+
+<div class="note">
+    📌 <strong>快速查看</strong>：运行 <code>go env</code> 查看所有当前环境变量设置。
+</div>
+
+<h2>GOROOT</h2>
+<p>Go 语言的安装根目录。通常不需要手动设置，Go 会自动检测。</p>
+<pre><code>export GOROOT=/usr/local/go
+# Windows: set GOROOT=C:\Go</code></pre>
+
+<h2>GOPATH</h2>
+<p>工作空间目录，包含 <code>src</code>、<code>pkg</code>、<code>bin</code> 三个子目录。Go 1.8+ 默认值为 <code>$HOME/go</code>。</p>
+<pre><code>export GOPATH=$HOME/go
+# 多个路径用冒号分隔（Windows用分号）
+export GOPATH=$HOME/go:$HOME/work/go</code></pre>
+<table>
+    <tr><th>子目录</th><th>用途</th></tr>
+    <tr><td><code>src/</code></td><td>存放源代码</td></tr>
+    <tr><td><code>pkg/</code></td><td>存放编译后的包文件</td></tr>
+    <tr><td><code>bin/</code></td><td>存放编译后的可执行文件</td></tr>
+</table>
+
+<h2>GOBIN</h2>
+<p>指定 <code>go install</code> 安装可执行文件的目录。默认是 <code>$GOPATH/bin</code>。</p>
+<pre><code>export GOBIN=$HOME/bin</code></pre>
+
+<h2>GOPROXY</h2>
+<p>Go Module 代理服务器地址，用于加速依赖下载。多个地址用逗号或竖线分隔。</p>
+<pre><code># 使用国内代理（推荐）
+export GOPROXY=https://goproxy.cn,direct
+
+# 使用官方代理（需翻墙）
+export GOPROXY=https://proxy.golang.org,direct
+
+# 直连模式（不使用代理）
+export GOPROXY=direct
+
+# 关闭代理校验和检查
+export GOSUMDB=off</code></pre>
+
+<div class="note">
+    🚀 <strong>国内加速</strong>：推荐设置 <code>GOPROXY=https://goproxy.cn,direct</code>
+</div>
+
+<h2>GOPRIVATE</h2>
+<p>指定私有仓库路径，不会通过代理下载，也不会进行校验和验证。</p>
+<pre><code>export GOPRIVATE=gitlab.mycompany.com,github.com/myprivate/*</code></pre>
+
+<h2>GONOSUMDB / GONOPROXY</h2>
+<p>更精细的控制：</p>
+<pre><code># 不进行校验和验证的模块
+export GONOSUMDB=gitlab.mycompany.com/*
+
+# 不使用代理的模块
+export GONOPROXY=gitlab.mycompany.com/*</code></pre>
+
+<h2>GOINSECURE</h2>
+<p>允许使用 HTTP 而非 HTTPS 拉取的模块路径。</p>
+<pre><code>export GOINSECURE=insecure.example.com</code></pre>
+
+<h2>GOMODCACHE</h2>
+<p>Module 缓存目录，默认是 <code>$GOPATH/pkg/mod</code>。</p>
+<pre><code>export GOMODCACHE=$HOME/.cache/go-mod</code></pre>
+
+<h2>GOCACHE</h2>
+<p>构建缓存目录，默认是 <code>$HOME/.cache/go-build</code>。</p>
+<pre><code>export GOCACHE=$HOME/.cache/go-build</code></pre>
+
+<h2>GOENV</h2>
+<p>环境变量配置文件路径，默认是 <code>$HOME/.config/go/env</code>。</p>
+<pre><code># 使用 go env -w 永久设置变量
+go env -w GOPROXY=https://goproxy.cn,direct
+go env -w GOPRIVATE=gitlab.mycompany.com</code></pre>
+
+<h2>常用命令速查</h2>
+<pre><code># 查看所有环境变量
+go env
+
+# 查看单个变量
+go env GOPATH
+
+# 永久设置变量（推荐）
+go env -w GOPROXY=https://goproxy.cn,direct
+
+# 恢复默认设置
+go env -u GOPROXY
+
+# 查看当前模块信息
+go list -m all</code></pre>
+
+<div class="note">
+    📖 <strong>推荐配置</strong>（~/.bashrc 或 ~/.zshrc）：
+    <pre><code>export GOPROXY=https://goproxy.cn,direct
+export GOPRIVATE=gitlab.mycompany.com
+export GO111MODULE=on</code></pre>
+</div>
+</body>
+</html>
