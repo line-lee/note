@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>技术笔记</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f5f5f5;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 侧边栏 - 文件夹树样式 */
+        .sidebar {
+            width: 280px;
+            background: #f3f3f3;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            padding: 16px 0;
+            font-size: 14px;
+        }
+
+        .sidebar h1 {
+            font-size: 16px;
+            font-weight: 600;
+            padding: 0 16px 12px 16px;
+            margin: 0;
+            border-bottom: 1px solid #ddd;
+            color: #333;
+        }
+
+        /* 树形结构 */
+        .tree {
+            padding: 8px 0;
+        }
+
+        .tree-node {
+            list-style: none;
+            user-select: none;
+        }
+
+        .tree-node .node-content {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px 4px 16px;
+            cursor: pointer;
+            color: #333;
+            transition: background 0.1s;
+        }
+
+        .tree-node .node-content:hover {
+            background: #e4e4e4;
+        }
+
+        /* 文件夹样式 */
+        .tree-node.folder > .node-content {
+            font-weight: 500;
+        }
+
+        /* 文件样式 */
+        .tree-node.file > .node-content {
+            padding-left: 32px;
+            font-weight: normal;
+            color: #555;
+        }
+
+        .tree-node.file .node-content:hover {
+            background: #e4e4e4;
+        }
+
+        /* 展开/折叠箭头 */
+        .toggle-icon {
+            display: inline-block;
+            width: 16px;
+            margin-right: 6px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+
+        .folder-icon {
+            margin-right: 6px;
+            font-size: 12px;
+        }
+
+        .file-icon {
+            margin-right: 6px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* 子节点容器 */
+        .children {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .children.collapsed {
+            display: none;
+        }
+
+        /* 内容区域 */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            background: white;
+            padding: 40px 60px;
+        }
+
+        .markdown-body {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .markdown-body h1 { font-size: 2em; margin: 0.67em 0; }
+        .markdown-body h2 { font-size: 1.5em; margin: 0.83em 0; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
+        .markdown-body h3 { font-size: 1.25em; margin: 1em 0; }
+        .markdown-body p { line-height: 1.6; margin: 1em 0; }
+        .markdown-body code { background: #f6f8fa; padding: 0.2em 0.4em; border-radius: 3px; font-family: 'SF Mono', Monaco, monospace; font-size: 85%; }
+        .markdown-body pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; }
+        .markdown-body pre code { background: none; padding: 0; }
+        .markdown-body blockquote { border-left: 4px solid #dfe2e5; padding-left: 1em; color: #6a737d; margin: 1em 0; }
+        .markdown-body table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+        .markdown-body th, .markdown-body td { border: 1px solid #dfe2e5; padding: 8px 12px; }
+        .markdown-body th { background: #f6f8fa; }
+        .markdown-body ul, .markdown-body ol { padding-left: 2em; margin: 1em 0; }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="sidebar">
+        <h1>📁 技术笔记</h1>
+        <ul class="tree" id="tree"></ul>
+    </div>
+    <div class="content">
+        <div class="markdown-body" id="markdown-content">
+            <p style="color: #999; text-align: center; margin-top: 100px;">
+                📂 从左侧选择一篇笔记
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 配置 marked
+    marked.setOptions({
+        highlight: function(code, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+                try {
+                    return hljs.highlight(code, { language: lang }).value;
+                } catch (e) {
+                    return code;
+                }
+            }
+            return hljs.highlightAuto(code).value;
+        }
+    });
+
+    // 文件夹结构（手动维护，后续可以改为自动扫描）
+    const noteStructure = [
+        {
+            name: "Golang",
+            type: "folder",
+            children: [
+                { name: "环境变量.md", type: "file", path: "Golang/环境变量.md" }
+            ]
+        },
+        {
+            name: "Kubernetes",
+            type: "folder",
+            children: [
+                { name: "Service类型.md", type: "file", path: "Kubernetes/Service类型.md" }
+            ]
+        },
+        {
+            name: "操作系统",
+            type: "folder",
+            children: [
+                { name: "README.md", type: "file", path: "操作系统/README.md" }
+            ]
+        }
+    ];
+
+    // 递归渲染树
+    function renderTree(nodes, level = 0) {
+        const ul = document.createElement('ul');
+        ul.className = 'tree-node-list';
+
+        nodes.forEach(node => {
+            const li = document.createElement('li');
+            li.className = `tree-node ${node.type}`;
+
+            const div = document.createElement('div');
+            div.className = 'node-content';
+
+            if (node.type === 'folder') {
+                // 文件夹：添加展开/折叠图标
+                const toggle = document.createElement('span');
+                toggle.className = 'toggle-icon';
+                toggle.textContent = '▼';
+                div.appendChild(toggle);
+
+                const folderIcon = document.createElement('span');
+                folderIcon.className = 'folder-icon';
+                folderIcon.textContent = '📁';
+                div.appendChild(folderIcon);
+
+                const span = document.createElement('span');
+                span.textContent = node.name;
+                div.appendChild(span);
+
+                li.appendChild(div);
+
+                // 子节点容器
+                const childrenContainer = document.createElement('ul');
+                childrenContainer.className = 'children';
+                if (node.children && node.children.length) {
+                    const childNodes = renderTreeChildren(node.children);
+                    childrenContainer.appendChild(childNodes);
+                }
+                li.appendChild(childrenContainer);
+
+                // 点击折叠/展开
+                let isCollapsed = false;
+                div.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    isCollapsed = !isCollapsed;
+                    toggle.textContent = isCollapsed ? '▶' : '▼';
+                    childrenContainer.classList.toggle('collapsed', isCollapsed);
+                });
+            } else {
+                // 文件
+                const fileIcon = document.createElement('span');
+                fileIcon.className = 'file-icon';
+                fileIcon.textContent = '📄';
+                div.appendChild(fileIcon);
+
+                // 去除 .md 后缀显示
+                const displayName = node.name.replace('.md', '');
+                const span = document.createElement('span');
+                span.textContent = displayName;
+                div.appendChild(span);
+
+                li.appendChild(div);
+
+                // 点击加载文件
+                div.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    loadMarkdown(node.path);
+                    // 高亮当前选中的文件
+                    document.querySelectorAll('.tree-node.file .node-content').forEach(el => {
+                        el.style.background = '';
+                    });
+                    div.style.background = '#cce5ff';
+                });
+            }
+
+            ul.appendChild(li);
+        });
+
+        return ul;
+    }
+
+    function renderTreeChildren(children) {
+        const ul = document.createElement('ul');
+        ul.className = 'tree-node-list';
+
+        children.forEach(child => {
+            const li = document.createElement('li');
+            li.className = `tree-node ${child.type}`;
+
+            const div = document.createElement('div');
+            div.className = 'node-content';
+
+            if (child.type === 'folder') {
+                const toggle = document.createElement('span');
+                toggle.className = 'toggle-icon';
+                toggle.textContent = '▼';
+                div.appendChild(toggle);
+
+                const folderIcon = document.createElement('span');
+                folderIcon.className = 'folder-icon';
+                folderIcon.textContent = '📁';
+                div.appendChild(folderIcon);
+
+                const span = document.createElement('span');
+                span.textContent = child.name;
+                div.appendChild(span);
+
+                li.appendChild(div);
+
+                const childrenContainer = document.createElement('ul');
+                childrenContainer.className = 'children';
+                if (child.children && child.children.length) {
+                    childrenContainer.appendChild(renderTreeChildren(child.children));
+                }
+                li.appendChild(childrenContainer);
+
+                let isCollapsed = false;
+                div.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    isCollapsed = !isCollapsed;
+                    toggle.textContent = isCollapsed ? '▶' : '▼';
+                    childrenContainer.classList.toggle('collapsed', isCollapsed);
+                });
+            } else {
+                const fileIcon = document.createElement('span');
+                fileIcon.className = 'file-icon';
+                fileIcon.textContent = '📄';
+                div.appendChild(fileIcon);
+
+                const displayName = child.name.replace('.md', '');
+                const span = document.createElement('span');
+                span.textContent = displayName;
+                div.appendChild(span);
+
+                li.appendChild(div);
+
+                div.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    loadMarkdown(child.path);
+                    document.querySelectorAll('.tree-node.file .node-content').forEach(el => {
+                        el.style.background = '';
+                    });
+                    div.style.background = '#cce5ff';
+                });
+            }
+
+            ul.appendChild(li);
+        });
+
+        return ul;
+    }
+
+    // 加载并渲染 Markdown
+    async function loadMarkdown(path) {
+        try {
+            const response = await fetch(path);
+            if (!response.ok) throw new Error('文件不存在');
+            const markdown = await response.text();
+            const html = marked.parse(markdown);
+            document.getElementById('markdown-content').innerHTML = html;
+
+            // 代码高亮
+            document.querySelectorAll('#markdown-content pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+
+            const title = path.split('/').pop().replace('.md', '');
+            document.title = `${title} - 技术笔记`;
+        } catch (error) {
+            document.getElementById('markdown-content').innerHTML = `
+                    <div style="color: #d73a49; padding: 20px; text-align: center; background: #ffdce0; border-radius: 6px;">
+                        <strong>❌ 加载失败</strong><br>
+                        无法读取文件: ${path}<br><br>
+                        <span style="font-size: 13px; color: #666;">💡 提示：请使用本地服务器打开（VS Code Live Server 或 python -m http.server）</span>
+                    </div>
+                `;
+        }
+    }
+
+    // 初始化树
+    function initTree() {
+        const treeContainer = document.getElementById('tree');
+        treeContainer.innerHTML = '';
+        const tree = renderTree(noteStructure);
+        treeContainer.appendChild(tree);
+    }
+
+    initTree();
+</script>
+</body>
+</html>
